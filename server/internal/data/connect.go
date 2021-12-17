@@ -32,5 +32,13 @@ func SetupDatabase() (db *sql.DB, err error) {
 		return nil, err
 	}
 
+	if err = CreateRequestTable(db); err != nil {
+		return nil, err
+	}
+
+	if err = CreateResponseTable(db); err != nil {
+		return nil, err
+	}
+
 	return db, err
 }

@@ -5,15 +5,6 @@ import (
 	"testing"
 )
 
-func testDatabase() (db *sql.DB) {
-	var err error
-	if db, err = SetupDatabase(); err != nil {
-		panic(err)
-	}
-
-	return db
-}
-
 func testInsertProject(db *sql.DB) (int64, error) {
 	testTitle := "Test Project"
 	testDesciption := "This is a test description"

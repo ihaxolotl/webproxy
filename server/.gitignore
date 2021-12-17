@@ -5,3 +5,5 @@ cmd/proxy/proxy
 
 # Files
 db.sqlite
+*.html
+*.out
