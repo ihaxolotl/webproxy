@@ -1,0 +1,4 @@
+# Gitignore
+
+# Executables
+cmd/proxy/proxy
