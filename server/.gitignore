@@ -2,3 +2,6 @@
 
 # Executables
 cmd/proxy/proxy
+
+# Files
+db.sqlite
