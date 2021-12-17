@@ -1,10 +1,12 @@
-package main
+package proxy
 
 import (
 	"bufio"
 	"bytes"
 	"net/http"
 	"strings"
+
+	"github.com/ihaxolotl/webproxy/internal/buffer"
 )
 
 type filter struct {
@@ -14,14 +16,14 @@ type filter struct {
 
 // parseProxyRequest parses an HTTP request crafted for a proxy and creates a new request
 // that can be processed by the target web server.
-func parseProxyRequest(src *Buffer, filters []filter) (*Buffer, error) {
+func parseProxyRequest(src *buffer.Buffer, filters []filter) (*buffer.Buffer, error) {
 	var (
 		dst  []byte
 		n    int
 		diff int
 	)
 
-	dst = make([]byte, ReadBufferSize)
+	dst = make([]byte, buffer.ReadBufferSize)
 	n = src.Size()
 
 	copy(dst, src.Buffer())
@@ -37,7 +39,7 @@ func parseProxyRequest(src *Buffer, filters []filter) (*Buffer, error) {
 		}
 	}
 
-	return NewBufferFrom(dst, n), nil
+	return buffer.NewBufferFrom(dst, n), nil
 }
 
 // readRequest is a hack for parsing the hostname and URL object from a

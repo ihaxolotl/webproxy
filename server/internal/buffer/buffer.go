@@ -1,10 +1,12 @@
-package main
+package buffer
 
 import (
 	"bufio"
 	"io"
 	"net"
 )
+
+const ReadBufferSize = 0xffff
 
 // ReadAll is a fork of the Go Standard Library's io.ReadAll which
 // also explicitly returns the length of the buffer that was read.
