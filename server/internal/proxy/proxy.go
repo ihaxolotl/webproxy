@@ -1,8 +1,9 @@
 package proxy
 
 import (
+	"bytes"
 	"database/sql"
-	"errors"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -18,37 +19,6 @@ import (
 
 const DefaultPort = 8080
 
-var ErrUnknownProxyCmd = errors.New("unknown proxy command")
-
-type ProxyCmdType byte
-
-const (
-	ProxyCmdUnknown ProxyCmdType = iota
-	ProxyCmdStart
-	ProxyCmdStop
-	ProxyCmdStall
-	ProxyCmdForward
-	ProxyCmdDrop
-)
-
-var proxyCmdTypes = map[ProxyCmdType]string{
-	ProxyCmdUnknown: "ProxyCmdUnknown",
-	ProxyCmdStart:   "ProxyCmdStart",
-	ProxyCmdStop:    "ProxyCmdStop",
-	ProxyCmdStall:   "ProxyCmdStall",
-	ProxyCmdForward: "ProxyCmdForward",
-	ProxyCmdDrop:    "ProxyCmdDrop",
-}
-
-func (m ProxyCmdType) String() string {
-	return proxyCmdTypes[m]
-}
-
-type ProxyCmd struct {
-	Type ProxyCmdType `json:"type"`
-	Data []byte       `json:"data"`
-}
-
 // Options represents the configuration object for the proxy.
 type Options struct {
 	ListenPort      int  // Proxy listener port
@@ -58,15 +28,23 @@ type Options struct {
 }
 
 type Proxy struct {
-	db   *sql.DB
-	conn *websocket.Conn
-	cmd  chan ProxyCmd
+	db     *sql.DB
+	conn   *websocket.Conn
+	cmd    chan ProxyCmd
+	intcmd chan ProxyCmd
 }
 
+// New allocates memory for and returns a Proxy.
 func New(db *sql.DB, conn *websocket.Conn, cmd chan ProxyCmd) *Proxy {
-	return &Proxy{db, conn, cmd}
+	return &Proxy{
+		db:     db,
+		conn:   conn,
+		cmd:    cmd,
+		intcmd: make(chan ProxyCmd),
+	}
 }
 
+// Spawn starts a new TCP proxy listener and accepts requests from the client.
 func (proxy *Proxy) Spawn() {
 	var (
 		listener net.Listener
@@ -74,6 +52,7 @@ func (proxy *Proxy) Spawn() {
 		err      error
 	)
 
+	// Set default options for interception
 	opts = Options{
 		ListenPort:      DefaultPort,
 		InterceptClient: true,
@@ -85,6 +64,24 @@ func (proxy *Proxy) Spawn() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	// FIXME: Would a mutex be required for accessing this critical section?
+	go func() {
+		for {
+			cmd := <-proxy.cmd
+			switch cmd.Type {
+			case ProxyCmdStart:
+				opts.Stall = true
+				fmt.Printf("Stall: on\n")
+			case ProxyCmdStop:
+				opts.Stall = false
+				fmt.Printf("Stall: off\n")
+			case ProxyCmdForward, ProxyCmdDrop:
+				proxy.intcmd <- cmd
+			default:
+			}
+		}
+	}()
 
 	for {
 		var conn net.Conn
@@ -98,6 +95,48 @@ func (proxy *Proxy) Spawn() {
 	}
 }
 
+// stall takes intercepted data and sends it to the client's WebSocket connection and blocks
+// until a command is received. If the command type if ProxyCmdForward, the original request
+// is compared to the command data. If the two buffers match, the edited flag will be set.
+// If the command type is ProxyCmdDrop, return an error.
+func (proxy *Proxy) stall(stalled *buffer.Buffer, edited *bool) (*buffer.Buffer, error) {
+	var (
+		cmd       ProxyCmd
+		msg       ProxyCmd
+		payload   []byte
+		forwarded *buffer.Buffer
+		err       error
+	)
+
+	msg = ProxyCmd{
+		Type: ProxyCmdStall,
+		Data: string(stalled.Buffer()),
+	}
+
+	if payload, err = json.Marshal(&msg); err != nil {
+		return nil, err
+	}
+
+	if err = proxy.conn.WriteMessage(websocket.TextMessage, payload); err != nil {
+		return nil, err
+	}
+
+	cmd = <-proxy.intcmd
+	if cmd.Type == ProxyCmdForward {
+		if forwarded = buffer.NewBufferFrom([]byte(cmd.Data), len(cmd.Data)); forwarded == nil {
+			return nil, ErrNilBuffer
+		}
+
+		if bytes.Compare(forwarded.Buffer(), stalled.Buffer()) != 0 {
+			*edited = true
+		}
+
+		return forwarded, nil
+	}
+
+	return nil, ErrDropped
+}
+
 // HandleRequest handles requests and response by acting as a middle-man.
 // Requests are received from the client and forwarded to their destination.
 func (proxy *Proxy) HandleRequest(conn net.Conn, opts *Options) {
@@ -106,6 +145,8 @@ func (proxy *Proxy) HandleRequest(conn net.Conn, opts *Options) {
 		proxyRequest   *buffer.Buffer
 		serverResponse *buffer.Buffer
 		hostname       string
+		requestEdited  bool
+		responseEdited bool
 		err            error
 	)
 
@@ -155,14 +196,12 @@ func (proxy *Proxy) HandleRequest(conn net.Conn, opts *Options) {
 
 	// Stall requests
 	if opts.InterceptClient && opts.Stall {
-		if err = proxy.conn.WriteMessage(
-			websocket.TextMessage, proxyRequest.Buffer(),
-		); err != nil {
-			log.Fatal(err)
-		}
+		if proxyRequest, err = proxy.stall(proxyRequest, &requestEdited); err != nil {
+			if err != ErrDropped {
+				log.Fatal(err)
+			}
 
-		cmd := <-proxy.cmd
-		if cmd.Type == ProxyCmdDrop {
+			log.Println(err)
 			return
 		}
 	}
@@ -174,7 +213,7 @@ func (proxy *Proxy) HandleRequest(conn net.Conn, opts *Options) {
 		Domain:    dummy.URL.Host,
 		IPAddr:    dummy.URL.Host,
 		Length:    int64(len(proxyRequest.Buffer())),
-		Edited:    false,
+		Edited:    requestEdited,
 		Comment:   "",
 		Raw:       string(proxyRequest.Buffer()),
 	}
@@ -196,15 +235,10 @@ func (proxy *Proxy) HandleRequest(conn net.Conn, opts *Options) {
 
 	// Stall responses
 	if opts.InterceptServer && opts.Stall {
-		if err = proxy.conn.WriteMessage(
-			websocket.TextMessage, serverResponse.Buffer(),
-		); err != nil {
-			log.Fatal(err)
-		}
-
-		cmd := <-proxy.cmd
-		if cmd.Type == ProxyCmdDrop {
-			return
+		if serverResponse, err = proxy.stall(serverResponse, &responseEdited); err != nil {
+			if err != ErrDropped {
+				return
+			}
 		}
 	}
 

@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 
 	"github.com/gorilla/websocket"
@@ -25,11 +26,11 @@ func HandleProxy(ctx Context, conn *websocket.Conn, cmd chan proxy.ProxyCmd) err
 			return err
 		}
 
-		if msg.Type != proxy.ProxyCmdUnknown {
-			cmd <- msg
-		} else {
-			return proxy.ErrUnknownProxyCmd
+		if err = msg.Validate(); err != nil {
+			return err
 		}
+
+		cmd <- msg
 	}
 }
 
@@ -76,6 +77,7 @@ func GetProjectsProxyRoute(ctx Context) http.HandlerFunc {
 		go prox.Spawn()
 
 		if err = HandleProxy(ctx, conn, cmd); err != nil {
+			log.Println(err)
 			conn.WriteMessage(websocket.CloseMessage, []byte(err.Error()))
 		}
 	}
