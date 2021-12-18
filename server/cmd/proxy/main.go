@@ -37,15 +37,21 @@ func main() {
 		}
 	}()
 
-	r := mux.NewRouter()
+	m := mux.NewRouter()
+	m.StrictSlash(true)
+
+	ctx := api.Context{Database: db}
 
 	for _, rt := range api.APIRoutes {
-		r.HandleFunc(rt.URL, rt.Handler).Name(rt.Name).Methods(rt.Method)
+		m.Path(rt.URL).
+			Name(rt.Name).
+			Methods(rt.Method).
+			Handler(rt.Handler(ctx))
 	}
 
 	s := &http.Server{
 		Addr:         APIAddr,
-		Handler:      r,
+		Handler:      m,
 		ReadTimeout:  time.Second * 10,
 		WriteTimeout: time.Second * 10,
 	}

@@ -9,10 +9,10 @@ import (
 
 // Project respresents the data for an engagement.
 type Project struct {
-	ID          string    // Unique ID of the project.
-	Title       string    // Title of the project.
-	Description string    // Description of the project.
-	Created     time.Time // Timestamp for when the project was created.
+	ID          string    `json:"id"`         // Unique ID of the project.
+	Title       string    `json:"title"`      // Title of the project.
+	Description string    `json:"decription"` // Description of the project.
+	Created     time.Time `json:"created"`    // Timestamp for when the project was created.
 }
 
 // CreateProjectTable creates the "projects" table if it doesn't already exist.
@@ -30,33 +30,44 @@ func CreateProjectTable(db *sql.DB) (err error) {
 }
 
 // InsertProject inserts a new project into the database.
-func InsertProject(db *sql.DB, title, description string) (rowid int64, err error) {
-	stmt, err := db.Prepare(`
+func InsertProject(db *sql.DB, p *Project) (rowid int64, err error) {
+	var stmt *sql.Stmt
+
+	stmt, err = db.Prepare(`
 		INSERT INTO projects(
 			id, title, description, created
 		) VALUES (?, ?, ?, ?);
 	`)
+	if err != nil {
+		return 0, err
+	}
+	defer stmt.Close()
 
+	p.ID = uuid.New().String()
+	p.Created = time.Now()
+
+	res, err := stmt.Exec(
+		p.ID,
+		p.Title,
+		p.Description,
+		p.Created,
+	)
 	if err != nil {
 		return 0, err
 	}
 
-	defer stmt.Close()
-
-	res, err := stmt.Exec(uuid.New().String(), title, description, time.Now())
 	return res.LastInsertId()
 }
 
-func InsertAndGetProject(db *sql.DB, title, description string) (project *Project, err error) {
+func InsertAndGetProject(db *sql.DB, p *Project) (err error) {
 	var (
 		stmt  *sql.Stmt
 		rowid int64
-		p     *Project
 	)
 
-	rowid, err = InsertProject(db, title, description)
+	rowid, err = InsertProject(db, p)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	stmt, err = db.Prepare(`
@@ -69,20 +80,15 @@ func InsertAndGetProject(db *sql.DB, title, description string) (project *Projec
 		LIMIT 0, 1;
 	`)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	p = &Project{}
-	if err = stmt.QueryRow(rowid).Scan(
+	return stmt.QueryRow(rowid).Scan(
 		&p.ID,
 		&p.Title,
 		&p.Description,
 		&p.Created,
-	); err != nil {
-		return nil, err
-	}
-
-	return p, err
+	)
 }
 
 // GetProjects returns all projects in the database.
@@ -100,7 +106,12 @@ func GetProjects(db *sql.DB) (projects []Project, err error) {
 	for rows.Next() {
 		var p Project
 
-		if err = rows.Scan(&p.ID, &p.Title, &p.Description, &p.Created); err != nil {
+		if err = rows.Scan(
+			&p.ID,
+			&p.Title,
+			&p.Description,
+			&p.Created,
+		); err != nil {
 			return nil, err
 		}
 
@@ -131,7 +142,12 @@ func GetProjectById(db *sql.DB, id string) (project *Project, err error) {
 	}
 
 	p = &Project{}
-	if err = stmt.QueryRow(id).Scan(&p.ID, &p.Title, &p.Description, &p.Created); err != nil {
+	if err = stmt.QueryRow(id).Scan(
+		&p.ID,
+		&p.Title,
+		&p.Description,
+		&p.Created,
+	); err != nil {
 		return nil, err
 	}
 
