@@ -8,16 +8,16 @@ import (
 // Response represents an HTTP response and its metadata that has
 // been intercepted by the proxy.
 type Response struct {
-	ID        string    // Unique ID of the response.
-	ProjectID string    // Unique ID of the parent project.
-	Status    int16     // HTTP status code of the response.
-	Length    int64     // Length of the response in bytes.
-	Elapsed   int64     // Time elapsed since request was sent until response.
-	Edited    bool      // Flag for whether the response was modified or not.
-	Timestamp time.Time // Time the response was received.
-	Mimetype  string    // Mime-type of the response body data.
-	Comment   string    // User-supplied comment on the response.
-	Raw       string    // Raw response bytes.
+	ID        string    `json:"id"`        // Unique ID of the response.
+	ProjectID string    `json:"projectId"` // Unique ID of the parent project.
+	Status    int16     `json:"status"`    // HTTP status code of the response.
+	Length    int64     `json:"length"`    // Length of the response in bytes.
+	Elapsed   int64     `json:"elapsed"`   // Time elapsed since request was sent until response.
+	Edited    bool      `json:"edited"`    // Flag for whether the response was modified or not.
+	Timestamp time.Time `json:"timestamp"` // Time the response was received.
+	Mimetype  string    `json:"mimetype"`  // Mime-type of the response body data.
+	Comment   string    `json:"comment"`   // User-supplied comment on the response.
+	Raw       string    `json:"raw"`       // Raw response bytes.
 }
 
 // CreateResponseTable creates the "responses" table if it doesn't already exist.

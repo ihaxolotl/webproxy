@@ -8,16 +8,16 @@ import (
 // Request represents an HTTP request and its metadata that has
 // been intercepted by the proxy.
 type Request struct {
-	ID        string    // Unique ID of the request.
-	ProjectID string    // Unique ID of the parent project.
-	Method    string    // HTTP method of the request.
-	Domain    string    // Domain name of the target host.
-	IPAddr    string    // Internet address of the target host.
-	Length    int64     // Length of the request in bytes.
-	Edited    bool      // Flag for whether the request was modified or not.
-	Timestamp time.Time // Time the request was made.
-	Comment   string    // User-supplied comment on the request.
-	Raw       string    // Raw request bytes.
+	ID        string    `json:"id"`        // Unique ID of the request.
+	ProjectID string    `json:"projectId"` // Unique ID of the parent project.
+	Method    string    `json:"method"`    // HTTP method of the request.
+	Domain    string    `json:"domain"`    // Domain name of the target host.
+	IPAddr    string    `json:"ipaddr"`    // Internet address of the target host.
+	Length    int64     `json:"length"`    // Length of the request in bytes.
+	Edited    bool      `json:"edited"`    // Flag for whether the request was modified or not.
+	Timestamp time.Time `json:"timestamp"` // Time the request was made.
+	Comment   string    `json:"comment"`   // User-supplied comment on the request.
+	Raw       string    `json:"raw"`       // Raw request bytes.
 }
 
 // CreateRequestTable creates the "requests" table if it doesn't already exist.

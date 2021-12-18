@@ -3,20 +3,24 @@ package data
 import (
 	"database/sql"
 	"testing"
+	"time"
+
+	"github.com/google/uuid"
 )
 
-func testInsertProject(db *sql.DB) (int64, error) {
-	testTitle := "Test Project"
-	testDesciption := "This is a test description"
-
-	return InsertProject(db, testTitle, testDesciption)
+var testExampleProject = &Project{
+	ID:          uuid.New().String(),
+	Title:       "Test Project",
+	Description: "This is a test description",
+	Created:     time.Now(),
 }
 
-func testInsertAndGetProject(db *sql.DB) (*Project, error) {
-	testTitle := "Test Project"
-	testDesciption := "This is a test description"
+func testInsertProject(db *sql.DB) (int64, error) {
+	return InsertProject(db, testExampleProject)
+}
 
-	return InsertAndGetProject(db, testTitle, testDesciption)
+func testInsertAndGetProject(db *sql.DB) error {
+	return InsertAndGetProject(db, testExampleProject)
 }
 
 func TestInsertProject(t *testing.T) {
@@ -29,7 +33,7 @@ func TestInsertProject(t *testing.T) {
 func TestInsertAndGetProject(t *testing.T) {
 	db := testDatabase()
 
-	if _, err := testInsertAndGetProject(db); err != nil {
+	if err := testInsertAndGetProject(db); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -57,8 +61,8 @@ func TestGetProjects(t *testing.T) {
 func TestGetProjectById(t *testing.T) {
 	db := testDatabase()
 
-	inserted, err := testInsertAndGetProject(db)
-	if err != nil {
+	inserted := testExampleProject
+	if err := testInsertAndGetProject(db); err != nil {
 		t.Fatal(err)
 	}
 
