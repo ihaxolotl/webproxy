@@ -2,17 +2,14 @@ package main
 
 import (
 	"log"
-	"net"
 	"net/http"
 	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/ihaxolotl/webproxy/internal/api"
 	"github.com/ihaxolotl/webproxy/internal/data"
-	"github.com/ihaxolotl/webproxy/internal/proxy"
 )
 
-const ProxyListenerAddr = ":8080"
 const APIAddr = ":8888"
 
 func main() {
@@ -20,22 +17,6 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	go func() {
-		listener, err := net.Listen("tcp", ProxyListenerAddr)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		for {
-			conn, err := listener.Accept()
-			if err != nil {
-				log.Fatal(err)
-			}
-
-			go proxy.HandleRequest(conn, db)
-		}
-	}()
 
 	m := mux.NewRouter()
 	m.StrictSlash(true)

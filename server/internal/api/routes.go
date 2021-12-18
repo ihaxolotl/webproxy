@@ -7,15 +7,17 @@ import (
 	"net/http"
 )
 
-type Context struct {
-	Database *sql.DB
-}
-
 type Route struct {
 	Name    string
 	URL     string
 	Method  string
 	Handler func(Context) http.HandlerFunc
+}
+
+type JSON map[string]interface{}
+
+type Context struct {
+	Database *sql.DB
 }
 
 func (ctx *Context) JSON(rw *http.ResponseWriter, code int, payload interface{}) {
