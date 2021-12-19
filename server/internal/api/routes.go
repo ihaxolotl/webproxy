@@ -77,4 +77,16 @@ var APIRoutes []Route = []Route{
 		Method:  http.MethodGet,
 		Handler: GetProjectHistoryRoute,
 	},
+	{
+		Name:    "GetRequestById",
+		URL:     "/requests/{requestId}",
+		Method:  http.MethodGet,
+		Handler: GetRequestByIdRoute,
+	},
+	{
+		Name:    "GetResponseById",
+		URL:     "/responses/{responseId}",
+		Method:  http.MethodGet,
+		Handler: GetResponseByIdRoute,
+	},
 }
