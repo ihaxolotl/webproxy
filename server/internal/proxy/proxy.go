@@ -2,7 +2,6 @@ package proxy
 
 import (
 	"bytes"
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -15,6 +14,8 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/ihaxolotl/webproxy/internal/buffer"
 	"github.com/ihaxolotl/webproxy/internal/data"
+	"github.com/ihaxolotl/webproxy/internal/data/requests"
+	"github.com/ihaxolotl/webproxy/internal/data/responses"
 )
 
 const DefaultPort = 8080
@@ -28,14 +29,14 @@ type Options struct {
 }
 
 type Proxy struct {
-	db     *sql.DB
+	db     *data.Database
 	conn   *websocket.Conn
 	cmd    chan ProxyCmd
 	intcmd chan ProxyCmd
 }
 
 // New allocates memory for and returns a Proxy.
-func New(db *sql.DB, conn *websocket.Conn, cmd chan ProxyCmd) *Proxy {
+func New(db *data.Database, conn *websocket.Conn, cmd chan ProxyCmd) *Proxy {
 	return &Proxy{
 		db:     db,
 		conn:   conn,
@@ -206,7 +207,7 @@ func (proxy *Proxy) HandleRequest(conn net.Conn, opts *Options) {
 		}
 	}
 
-	requestEntry := data.Request{
+	requestEntry := requests.Request{
 		ID:        uuid.New().String(),
 		ProjectID: "NoneYet",
 		Method:    dummy.Method,
@@ -218,7 +219,7 @@ func (proxy *Proxy) HandleRequest(conn net.Conn, opts *Options) {
 		Raw:       string(proxyRequest.Buffer()),
 	}
 
-	if _, err = data.InsertRequest(proxy.db, &requestEntry); err != nil {
+	if _, err = proxy.db.Requests.Insert(&requestEntry); err != nil {
 		log.Fatalln("database: ", err)
 	}
 
@@ -242,7 +243,7 @@ func (proxy *Proxy) HandleRequest(conn net.Conn, opts *Options) {
 		}
 	}
 
-	responseEntry := data.Response{
+	responseEntry := responses.Response{
 		ID:        uuid.New().String(),
 		ProjectID: "NoneYet",
 		Status:    0,
@@ -254,7 +255,7 @@ func (proxy *Proxy) HandleRequest(conn net.Conn, opts *Options) {
 		Raw:       string(serverResponse.Buffer()),
 	}
 
-	if _, err = data.InsertResponse(proxy.db, &responseEntry); err != nil {
+	if _, err = proxy.db.Responses.Insert(&responseEntry); err != nil {
 		log.Fatalln("database: ", err)
 	}
 

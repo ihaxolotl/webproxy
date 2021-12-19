@@ -13,8 +13,8 @@ import (
 const APIAddr = ":8888"
 
 func main() {
-	db, err := data.SetupDatabase()
-	if err != nil {
+	db := data.New()
+	if err := db.Setup(); err != nil {
 		log.Fatal(err)
 	}
 
