@@ -35,9 +35,10 @@ func (m ProxyCmdType) String() string {
 	return proxyCmdTypes[m]
 }
 
+// ProxyCmd is a command to be processed by a proxy listener.
 type ProxyCmd struct {
-	Type ProxyCmdType `json:"type"`
-	Data string       `json:"data"`
+	Type ProxyCmdType `json:"type"` // Command type
+	Data string       `json:"data"` // Command data payload
 }
 
 // Validate validates the data payloads of a ProxyCmd.

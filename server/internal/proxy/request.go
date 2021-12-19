@@ -16,12 +16,18 @@ type filter struct {
 
 // parseProxyRequest parses an HTTP request crafted for a proxy and creates a new request
 // that can be processed by the target web server.
-func parseProxyRequest(src *buffer.Buffer, filters []filter) (*buffer.Buffer, error) {
+func parseProxyRequest(src *buffer.Buffer, req *http.Request) (*buffer.Buffer, error) {
 	var (
 		dst  []byte
 		n    int
 		diff int
 	)
+
+	// HACK: Replace the proxy headers in the request.
+	filters := []filter{
+		{Find: "Proxy-Connection:", Replace: "Connection:"},
+		{Find: req.URL.Scheme + "://" + req.URL.Host, Replace: ""},
+	}
 
 	dst = make([]byte, buffer.ReadBufferSize)
 	n = src.Size()
@@ -42,14 +48,23 @@ func parseProxyRequest(src *buffer.Buffer, filters []filter) (*buffer.Buffer, er
 	return buffer.NewBufferFrom(dst, n), nil
 }
 
-// readRequest is a hack for parsing the hostname and URL object from a
-// byte slice.
-func readRequest(buf []byte, n int) *http.Request {
+// readRequest parses an http.Request object from a byte slice.
+func readRequest(buf *buffer.Buffer) *http.Request {
 	// HACK: Parse the the request to get the hostname.
-	req, err := http.ReadRequest(bufio.NewReader(bytes.NewReader(buf[:n])))
+	req, err := http.ReadRequest(bufio.NewReader(bytes.NewReader(buf.Buffer())))
 	if err != nil {
 		panic(err)
 	}
 
 	return req
+}
+
+// readResponse parses an http.Response object from a byte slice.
+func readResponse(req *http.Request, buf *buffer.Buffer) *http.Response {
+	res, err := http.ReadResponse(bufio.NewReader(bytes.NewReader(buf.Buffer())), req)
+	if err != nil {
+		panic(err)
+	}
+
+	return res
 }
