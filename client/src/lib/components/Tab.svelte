@@ -1,9 +1,10 @@
 <script lang="ts">
     export let active: boolean = false;
     export let title: string = "";
+    export let onClick = (_: string) => {};
 </script>
 
-<div class="tab" class:active="{active}" title={title}>
+<div class="tab" class:active="{active}" title={title} on:click={() => onClick(title)}>
     {title} 
 </div>
 
@@ -13,6 +14,7 @@
         font-size: 16px;
         padding: 8px 2px 16px 2px;
         text-align: center;
+        user-select: none;
         width: fit-content;
     }
 

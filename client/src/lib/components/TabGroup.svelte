@@ -1,12 +1,13 @@
 <script lang="ts">
     import Tab from "./Tab.svelte";
 
+    export let onSelect = () => {};
     export let tabs = [];
 </script>
 
 <div class="group">
     {#each tabs as t}
-        <Tab active={t.active} title={t.title} />
+        <Tab active={t.active} title={t.title} onClick={onSelect} />
     {/each}
 </div>
 

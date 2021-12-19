@@ -1,11 +1,38 @@
 <script lang="ts">
-    import H1 from "$lib/H1.svelte";
+    import TabGroup from "$lib/TabGroup.svelte";
+    import Intercept from "$lib/containers/intercept.svelte";
+    import History from "$lib/containers/history.svelte";
+    import Options from "$lib/containers/options.svelte";
 
-    const pageTitle: string = "Intercept";
+    let tabs = [
+        {title: "Intercept", active: true, view: Intercept},
+        {title: "History", active: false, view: History},
+        {title: "Options", active: false, view: Options},
+    ];
+
+    function setTabActive(title: string): void {
+        tabs = tabs.map((t) => {
+            if (t.title === title) {
+                return { ...t, active: true};
+            }
+
+            return { ...t, active: false};
+        });
+    }
 </script>
 
-<svelte:head>
-    <title>WebProxy | {pageTitle}</title>
-</svelte:head>
+<TabGroup {tabs} onSelect={setTabActive} />
 
-<H1 text={pageTitle} />
+<div class="view">
+    {#each tabs as t}
+        {#if t.active}
+            <svelte:component this={t.view} />
+        {/if}
+    {/each}
+</div>
+
+<style>
+    .view {
+        padding: 24px 0 0 0;
+    }
+</style>
