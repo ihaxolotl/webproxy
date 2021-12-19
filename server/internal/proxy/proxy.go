@@ -65,7 +65,7 @@ func (proxy *Proxy) Spawn() {
 		ListenPort:      DefaultPort,
 		InterceptClient: true,
 		InterceptServer: true,
-		Stall:           true,
+		Stall:           false,
 	}
 
 	listener, err = net.Listen("tcp", fmt.Sprintf(":%d", opts.ListenPort))

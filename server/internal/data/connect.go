@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"os"
 
+	"github.com/ihaxolotl/webproxy/internal/data/history"
 	"github.com/ihaxolotl/webproxy/internal/data/projects"
 	"github.com/ihaxolotl/webproxy/internal/data/requests"
 	"github.com/ihaxolotl/webproxy/internal/data/responses"
@@ -21,6 +22,7 @@ type Database struct {
 	Projects  *projects.ProjectsTable
 	Requests  *requests.RequestsTable
 	Responses *responses.ResponseTable
+	History   *history.HistoryView
 }
 
 func New() *Database {
@@ -50,8 +52,14 @@ func (db *Database) Setup() (err error) {
 	db.Projects = projects.New(db.conn)
 	db.Requests = requests.New(db.conn)
 	db.Responses = responses.New(db.conn)
+	db.History = history.New(db.conn)
 
-	tables = []Table{db.Projects, db.Requests, db.Responses}
+	tables = []Table{
+		db.Projects,
+		db.Requests,
+		db.Responses,
+		db.History,
+	}
 	for _, t := range tables {
 		if err = t.Create(); err != nil {
 			return err
