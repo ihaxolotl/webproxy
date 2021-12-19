@@ -44,31 +44,37 @@ var APIRoutes []Route = []Route{
 	{
 		Name:    "Index",
 		URL:     "/",
-		Method:  "GET",
+		Method:  http.MethodGet,
 		Handler: IndexRoute,
 	},
 	{
 		Name:    "GetProjects",
 		URL:     "/projects",
-		Method:  "GET",
+		Method:  http.MethodGet,
 		Handler: GetProjectsRoute,
 	},
 	{
 		Name:    "CreateProject",
 		URL:     "/projects",
-		Method:  "POST",
+		Method:  http.MethodPost,
 		Handler: CreateProjectRoute,
 	},
 	{
 		Name:    "GetProjectById",
 		URL:     "/projects/{projectId}",
-		Method:  "GET",
+		Method:  http.MethodGet,
 		Handler: GetProjectsByIdRoute,
 	},
 	{
 		Name:    "GetProjectProxy",
 		URL:     "/projects/{projectId}/proxy",
-		Method:  "GET",
-		Handler: GetProjectsProxyRoute,
+		Method:  http.MethodGet,
+		Handler: GetProjectProxyRoute,
+	},
+	{
+		Name:    "GetProjectHistory",
+		URL:     "/projects/{projectId}/history",
+		Method:  http.MethodGet,
+		Handler: GetProjectHistoryRoute,
 	},
 }

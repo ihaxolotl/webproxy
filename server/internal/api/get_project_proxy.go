@@ -37,12 +37,12 @@ func HandleProxy(ctx Context, conn *websocket.Conn, cmd chan proxy.ProxyCmd) err
 // WebSocket upgrader
 var upgrader = websocket.Upgrader{}
 
-// GetProjectsProxyRoute is an endpoint for connecting to the intercept proxy
+// GetProjectProxyRoute is an endpoint for connecting to the intercept proxy
 // for the project. The endpoint will first check if the projectId passed as a
 // URL variable corresponds to an existing project in the database. If the project
 // exists, the endpoint will upgrade the connection to a WebSocket and will now
 // receive messages from the client to control the proxy.
-func GetProjectsProxyRoute(ctx Context) http.HandlerFunc {
+func GetProjectProxyRoute(ctx Context) http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
 		var (
 			conn *websocket.Conn
