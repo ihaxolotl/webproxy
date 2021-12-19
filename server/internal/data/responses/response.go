@@ -10,6 +10,7 @@ import (
 type Response struct {
 	ID        string    `json:"id"`        // Unique ID of the response.
 	ProjectID string    `json:"projectId"` // Unique ID of the parent project.
+	RequestID string    `json:"requestId"` // Unique ID of the corresponding request.
 	Status    int16     `json:"status"`    // HTTP status code of the response.
 	Length    int64     `json:"length"`    // Length of the response in bytes.
 	Elapsed   int64     `json:"elapsed"`   // Time elapsed since request was sent until response.
@@ -34,6 +35,7 @@ func (t ResponseTable) Create() (err error) {
 		CREATE TABLE IF NOT EXISTS responses (
 			id TEXT PRIMARY KEY NOT NULL UNIQUE,
 			projectid TEXT NOT NULL,
+			requestid TEXT NOT NULL,
 			status INTEGER NOT NULL,
 			length INTEGER NOT NULL,
 			elapsed INTEGER NOT NULL,
@@ -59,6 +61,7 @@ func (t ResponseTable) Insert(resp *Response) (rowid int64, err error) {
 		INSERT INTO responses(
 			id,
 			projectid,
+			requestid,
 			status,
 			length,
 			elapsed,
@@ -67,7 +70,7 @@ func (t ResponseTable) Insert(resp *Response) (rowid int64, err error) {
 			comment,
 			raw
 		) VALUES (
-			?, ?, ?, ?, ?, ?, ?, ?, ?
+			?, ?, ?, ?, ?, ?, ?, ?, ?, ?
 		);
 	`)
 	if err != nil {
@@ -77,6 +80,7 @@ func (t ResponseTable) Insert(resp *Response) (rowid int64, err error) {
 	res, err = stmt.Exec(
 		resp.ID,
 		resp.ProjectID,
+		resp.RequestID,
 		resp.Status,
 		resp.Length,
 		resp.Elapsed,
@@ -109,6 +113,7 @@ func (t ResponseTable) InsertAndFetch(r *Response) (resp *Response, err error) {
 		SELECT 
 			id,
 			projectid,
+			requestid,
 			status,
 			length,
 			elapsed,
@@ -131,6 +136,7 @@ func (t ResponseTable) InsertAndFetch(r *Response) (resp *Response, err error) {
 	err = stmt.QueryRow(rowid).Scan(
 		&resp.ID,
 		&resp.ProjectID,
+		&resp.RequestID,
 		&resp.Status,
 		&resp.Length,
 		&resp.Elapsed,
@@ -152,6 +158,7 @@ func (t ResponseTable) FetchById(id string) (resp *Response, err error) {
 		SELECT 
 			id,
 			projectid,
+			requestid,
 			status,
 			length,
 			elapsed,
@@ -173,6 +180,7 @@ func (t ResponseTable) FetchById(id string) (resp *Response, err error) {
 	err = stmt.QueryRow(id).Scan(
 		&resp.ID,
 		&resp.ProjectID,
+		&resp.RequestID,
 		&resp.Status,
 		&resp.Length,
 		&resp.Elapsed,

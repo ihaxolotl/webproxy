@@ -11,19 +11,21 @@ import (
 	_ "modernc.org/sqlite"
 )
 
-const DatabasePath = "./db.sqlite"
+const DatabasePath = "/tmp/db.sqlite"
 
 var testExampleRequest = &Request{
-	ID:        uuid.New().String(),
-	ProjectID: uuid.New().String(),
-	Method:    "GET",
-	Domain:    "localhost",
-	IPAddr:    "127.0.0.1",
-	Length:    18,
-	Edited:    true,
-	Timestamp: time.Now(),
-	Comment:   "SQL injection.",
-	Raw:       "GET / HTTP/1.1\r\n\r\n",
+	ID:         uuid.New().String(),
+	ProjectID:  uuid.New().String(),
+	ResponseID: uuid.New().String(),
+	Method:     "GET",
+	Domain:     "localhost",
+	IPAddr:     "127.0.0.1",
+	URL:        "/",
+	Length:     18,
+	Edited:     true,
+	Timestamp:  time.Now(),
+	Comment:    "SQL injection.",
+	Raw:        "GET / HTTP/1.1\r\n\r\n",
 }
 
 func testTable() *RequestsTable {

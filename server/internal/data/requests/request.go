@@ -8,16 +8,18 @@ import (
 // Request represents an HTTP request and its metadata that has
 // been intercepted by the proxy.
 type Request struct {
-	ID        string    `json:"id"`        // Unique ID of the request.
-	ProjectID string    `json:"projectId"` // Unique ID of the parent project.
-	Method    string    `json:"method"`    // HTTP method of the request.
-	Domain    string    `json:"domain"`    // Domain name of the target host.
-	IPAddr    string    `json:"ipaddr"`    // Internet address of the target host.
-	Length    int64     `json:"length"`    // Length of the request in bytes.
-	Edited    bool      `json:"edited"`    // Flag for whether the request was modified or not.
-	Timestamp time.Time `json:"timestamp"` // Time the request was made.
-	Comment   string    `json:"comment"`   // User-supplied comment on the request.
-	Raw       string    `json:"raw"`       // Raw request bytes.
+	ID         string    `json:"id"`         // Unique ID of the request.
+	ProjectID  string    `json:"projectId"`  // Unique ID of the parent project.
+	ResponseID string    `json:"responseId"` // Unique ID of the corresponding response.
+	Method     string    `json:"method"`     // HTTP method of the request.
+	Domain     string    `json:"domain"`     // Domain name of the target host.
+	IPAddr     string    `json:"ipaddr"`     // Internet address of the target host.
+	URL        string    `json:"url"`        // URL of the requested resource.
+	Length     int64     `json:"length"`     // Length of the request in bytes.
+	Edited     bool      `json:"edited"`     // Flag for whether the request was modified or not.
+	Timestamp  time.Time `json:"timestamp"`  // Time the request was made.
+	Comment    string    `json:"comment"`    // User-supplied comment on the request.
+	Raw        string    `json:"raw"`        // Raw request bytes.
 }
 
 type RequestsTable struct {
@@ -34,9 +36,11 @@ func (t RequestsTable) Create() (err error) {
 		CREATE TABLE IF NOT EXISTS requests (
 			id TEXT PRIMARY KEY NOT NULL UNIQUE,
 			projectid TEXT NOT NULL,
+			responseid TEXT NOT NULL,
 			method TEXT NOT NULL,
 			domain TEXT NOT NULL,
 			ipaddr TEXT NOT NULL,
+			url TEXT NOT NULL,
 			length INTEGER,
 			edited BOOLEAN NOT NULL CHECK (edited IN (0, 1)),
 			timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -60,16 +64,18 @@ func (t RequestsTable) Insert(req *Request) (rowid int64, err error) {
 		INSERT INTO requests(
 			id,
 			projectid,
+			responseid,
 			method,
 			domain,
 			ipaddr,
+			url,
 			length,
 			edited,
 			timestamp,
 			comment,
 			raw
 		) VALUES (
-			?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+			?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
 		);
 	`)
 	if err != nil {
@@ -79,9 +85,11 @@ func (t RequestsTable) Insert(req *Request) (rowid int64, err error) {
 	res, err = stmt.Exec(
 		req.ID,
 		req.ProjectID,
+		req.ResponseID,
 		req.Method,
 		req.Domain,
 		req.IPAddr,
+		req.URL,
 		req.Length,
 		req.Edited,
 		req.Timestamp,
@@ -112,9 +120,11 @@ func (t RequestsTable) InsertAndFetch(r *Request) (req *Request, err error) {
 		SELECT 
 			id,
 			projectid,
+			responseid,
 			method,
 			domain,
 			ipaddr,
+			url,
 			length,
 			edited,
 			timestamp,
@@ -135,9 +145,11 @@ func (t RequestsTable) InsertAndFetch(r *Request) (req *Request, err error) {
 	err = stmt.QueryRow(rowid).Scan(
 		&req.ID,
 		&req.ProjectID,
+		&req.ResponseID,
 		&req.Method,
 		&req.Domain,
 		&req.IPAddr,
+		&req.URL,
 		&req.Length,
 		&req.Edited,
 		&req.Timestamp,
@@ -157,9 +169,11 @@ func (t RequestsTable) FetchById(id string) (req *Request, err error) {
 		SELECT 
 			id,
 			projectid,
+			responseid,
 			method,
 			domain,
 			ipaddr,
+			url,
 			length,
 			edited,
 			timestamp,
@@ -180,9 +194,11 @@ func (t RequestsTable) FetchById(id string) (req *Request, err error) {
 	err = stmt.QueryRow(id).Scan(
 		&req.ID,
 		&req.ProjectID,
+		&req.ResponseID,
 		&req.Method,
 		&req.Domain,
 		&req.IPAddr,
+		&req.URL,
 		&req.Length,
 		&req.Edited,
 		&req.Timestamp,

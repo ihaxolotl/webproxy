@@ -29,19 +29,26 @@ type Options struct {
 }
 
 type Proxy struct {
-	db     *data.Database
-	conn   *websocket.Conn
-	cmd    chan ProxyCmd
-	intcmd chan ProxyCmd
+	projectId string
+	db        *data.Database
+	conn      *websocket.Conn
+	cmd       chan ProxyCmd
+	intcmd    chan ProxyCmd
 }
 
 // New allocates memory for and returns a Proxy.
-func New(db *data.Database, conn *websocket.Conn, cmd chan ProxyCmd) *Proxy {
+func New(
+	projectId string,
+	db *data.Database,
+	conn *websocket.Conn,
+	cmd chan ProxyCmd,
+) *Proxy {
 	return &Proxy{
-		db:     db,
-		conn:   conn,
-		cmd:    cmd,
-		intcmd: make(chan ProxyCmd),
+		projectId: projectId,
+		db:        db,
+		conn:      conn,
+		cmd:       cmd,
+		intcmd:    make(chan ProxyCmd),
 	}
 }
 
@@ -58,7 +65,7 @@ func (proxy *Proxy) Spawn() {
 		ListenPort:      DefaultPort,
 		InterceptClient: true,
 		InterceptServer: true,
-		Stall:           true,
+		Stall:           false,
 	}
 
 	listener, err = net.Listen("tcp", fmt.Sprintf(":%d", opts.ListenPort))
@@ -145,6 +152,10 @@ func (proxy *Proxy) HandleRequest(conn net.Conn, opts *Options) {
 		clientRequest  *buffer.Buffer
 		proxyRequest   *buffer.Buffer
 		serverResponse *buffer.Buffer
+		requestId      string
+		responseId     string
+		requestRecord  requests.Request
+		responseRecord responses.Response
 		hostname       string
 		requestEdited  bool
 		responseEdited bool
@@ -207,22 +218,6 @@ func (proxy *Proxy) HandleRequest(conn net.Conn, opts *Options) {
 		}
 	}
 
-	requestEntry := requests.Request{
-		ID:        uuid.New().String(),
-		ProjectID: "NoneYet",
-		Method:    dummy.Method,
-		Domain:    dummy.URL.Host,
-		IPAddr:    dummy.URL.Host,
-		Length:    int64(len(proxyRequest.Buffer())),
-		Edited:    requestEdited,
-		Comment:   "",
-		Raw:       string(proxyRequest.Buffer()),
-	}
-
-	if _, err = proxy.db.Requests.Insert(&requestEntry); err != nil {
-		log.Fatalln("database: ", err)
-	}
-
 	// Proxy the request to its destination.
 	if err = proxyRequest.Send(proxyConn); err != nil {
 		log.Fatalln("write error: ", err)
@@ -243,19 +238,41 @@ func (proxy *Proxy) HandleRequest(conn net.Conn, opts *Options) {
 		}
 	}
 
-	responseEntry := responses.Response{
-		ID:        uuid.New().String(),
-		ProjectID: "NoneYet",
-		Status:    0,
+	requestId = uuid.New().String()
+	responseId = uuid.New().String()
+
+	requestRecord = requests.Request{
+		ID:         requestId,
+		ProjectID:  proxy.projectId,
+		ResponseID: responseId,
+		Method:     dummy.Method,
+		Domain:     dummy.URL.Host,
+		IPAddr:     dummy.URL.Host, // TODO(Brett) Record the IP address of hosts
+		URL:        dummy.URL.RequestURI(),
+		Length:     int64(len(proxyRequest.Buffer())),
+		Edited:     requestEdited,
+		Comment:    "", // TODO(Brett): Implement comments
+		Raw:        string(proxyRequest.Buffer()),
+	}
+
+	if _, err = proxy.db.Requests.Insert(&requestRecord); err != nil {
+		log.Fatalln("database: ", err)
+	}
+
+	responseRecord = responses.Response{
+		ID:        responseId,
+		ProjectID: proxy.projectId,
+		RequestID: requestId,
+		Status:    0, // TODO(Brett): Record response status codes
 		Length:    int64(len(serverResponse.Buffer())),
-		Edited:    false,
+		Edited:    responseEdited,
 		Timestamp: time.Now(),
-		Mimetype:  "NoneYet",
-		Comment:   "",
+		Mimetype:  "NoneYet", // TODO(Brett): Record response body mime-types
+		Comment:   "",        // TODO(Brett): Implement comments
 		Raw:       string(serverResponse.Buffer()),
 	}
 
-	if _, err = proxy.db.Responses.Insert(&responseEntry); err != nil {
+	if _, err = proxy.db.Responses.Insert(&responseRecord); err != nil {
 		log.Fatalln("database: ", err)
 	}
 
