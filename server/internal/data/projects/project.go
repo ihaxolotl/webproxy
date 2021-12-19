@@ -1,4 +1,4 @@
-package data
+package projects
 
 import (
 	"database/sql"
@@ -15,9 +15,17 @@ type Project struct {
 	Created     time.Time `json:"created"`    // Timestamp for when the project was created.
 }
 
-// CreateProjectTable creates the "projects" table if it doesn't already exist.
-func CreateProjectTable(db *sql.DB) (err error) {
-	_, err = db.Exec(`
+type ProjectsTable struct {
+	db *sql.DB
+}
+
+func New(db *sql.DB) *ProjectsTable {
+	return &ProjectsTable{db}
+}
+
+// Create creates the "projects" table if it doesn't already exist.
+func (t ProjectsTable) Create() (err error) {
+	_, err = t.db.Exec(`
 		CREATE TABLE IF NOT EXISTS projects (
 			id TEXT PRIMARY KEY NOT NULL UNIQUE,
 			title TEXT NOT NULL,
@@ -29,11 +37,12 @@ func CreateProjectTable(db *sql.DB) (err error) {
 	return err
 }
 
-// InsertProject inserts a new project into the database.
-func InsertProject(db *sql.DB, p *Project) (rowid int64, err error) {
+// Insert inserts a new record into the projects table and returns the last inserted
+// rowid or an error.
+func (t ProjectsTable) Insert(p *Project) (rowid int64, err error) {
 	var stmt *sql.Stmt
 
-	stmt, err = db.Prepare(`
+	stmt, err = t.db.Prepare(`
 		INSERT INTO projects(
 			id, title, description, created
 		) VALUES (?, ?, ?, ?);
@@ -59,18 +68,20 @@ func InsertProject(db *sql.DB, p *Project) (rowid int64, err error) {
 	return res.LastInsertId()
 }
 
-func InsertAndGetProject(db *sql.DB, p *Project) (err error) {
+// InsertAndFetch inserts a new record into the projects table and returns the full
+// record or an error.
+func (t ProjectsTable) InsertAndFetch(p *Project) (err error) {
 	var (
 		stmt  *sql.Stmt
 		rowid int64
 	)
 
-	rowid, err = InsertProject(db, p)
+	rowid, err = t.Insert(p)
 	if err != nil {
 		return err
 	}
 
-	stmt, err = db.Prepare(`
+	stmt, err = t.db.Prepare(`
 		SELECT
 			id, title, description, created
 		FROM
@@ -91,10 +102,12 @@ func InsertAndGetProject(db *sql.DB, p *Project) (err error) {
 	)
 }
 
-// GetProjects returns all projects in the database.
+// Fetch returns all records from the projects table.
 // TODO(Brett): Add pagination.
-func GetProjects(db *sql.DB) (projects []Project, err error) {
-	rows, err := db.Query(`
+func (t ProjectsTable) Fetch() (projects []Project, err error) {
+	var rows *sql.Rows
+
+	rows, err = t.db.Query(`
 		SELECT
 			id, title, description, created
 		FROM
@@ -121,14 +134,13 @@ func GetProjects(db *sql.DB) (projects []Project, err error) {
 	return projects, err
 }
 
-// GetProjectById returns a single project or nil by a string id.
-func GetProjectById(db *sql.DB, id string) (project *Project, err error) {
+// FetchById returns a single project or nil by a string id.
+func (t ProjectsTable) FetchById(id string) (p *Project, err error) {
 	var (
 		stmt *sql.Stmt
-		p    *Project
 	)
 
-	stmt, err = db.Prepare(`
+	stmt, err = t.db.Prepare(`
 		SELECT
 			id, title, description, created
 		FROM 
@@ -152,4 +164,8 @@ func GetProjectById(db *sql.DB, id string) (project *Project, err error) {
 	}
 
 	return p, err
+}
+
+func (t ProjectsTable) FetchHistory(id string) (err error) {
+	return nil
 }

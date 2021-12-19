@@ -1,4 +1,4 @@
-package data
+package requests
 
 import (
 	"database/sql"
@@ -20,9 +20,17 @@ type Request struct {
 	Raw       string    `json:"raw"`       // Raw request bytes.
 }
 
-// CreateRequestTable creates the "requests" table if it doesn't already exist.
-func CreateRequestTable(db *sql.DB) (err error) {
-	_, err = db.Exec(`
+type RequestsTable struct {
+	db *sql.DB
+}
+
+func New(db *sql.DB) *RequestsTable {
+	return &RequestsTable{db}
+}
+
+// Create creates the "requests" table if it doesn't already exist.
+func (t RequestsTable) Create() (err error) {
+	_, err = t.db.Exec(`
 		CREATE TABLE IF NOT EXISTS requests (
 			id TEXT PRIMARY KEY NOT NULL UNIQUE,
 			projectid TEXT NOT NULL,
@@ -40,15 +48,15 @@ func CreateRequestTable(db *sql.DB) (err error) {
 	return err
 }
 
-// InsertRequest inserts a new entry into the requests table and returns
-// the last inserted rowid and an error.
-func InsertRequest(db *sql.DB, req *Request) (rowid int64, err error) {
+// InsertRequest inserts a new record into the requests table and returns
+// the last inserted rowid or an error.
+func (t RequestsTable) Insert(req *Request) (rowid int64, err error) {
 	var (
 		stmt *sql.Stmt
 		res  sql.Result
 	)
 
-	stmt, err = db.Prepare(`
+	stmt, err = t.db.Prepare(`
 		INSERT INTO requests(
 			id,
 			projectid,
@@ -87,18 +95,20 @@ func InsertRequest(db *sql.DB, req *Request) (rowid int64, err error) {
 	return res.LastInsertId()
 }
 
-func InsertAndGetRequest(db *sql.DB, r *Request) (req *Request, err error) {
+// InsertAndFetch inserts a new record into the requests table and returns the
+// full record or an error.
+func (t RequestsTable) InsertAndFetch(r *Request) (req *Request, err error) {
 	var (
 		stmt  *sql.Stmt
 		rowid int64
 	)
 
-	rowid, err = InsertRequest(db, r)
+	rowid, err = t.Insert(r)
 	if err != nil {
 		return nil, err
 	}
 
-	stmt, err = db.Prepare(`
+	stmt, err = t.db.Prepare(`
 		SELECT 
 			id,
 			projectid,
@@ -138,12 +148,12 @@ func InsertAndGetRequest(db *sql.DB, r *Request) (req *Request, err error) {
 	return req, err
 }
 
-// GetRequestById queries and returns the entry from the requests table matching
+// FetchById queries and returns the record from the requests table matching
 // the supplied id parameter and optionally, an error.
-func GetRequestById(db *sql.DB, id string) (req *Request, err error) {
+func (t RequestsTable) FetchById(id string) (req *Request, err error) {
 	var stmt *sql.Stmt
 
-	stmt, err = db.Prepare(`
+	stmt, err = t.db.Prepare(`
 		SELECT 
 			id,
 			projectid,

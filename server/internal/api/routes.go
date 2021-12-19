@@ -1,10 +1,11 @@
 package api
 
 import (
-	"database/sql"
 	"encoding/json"
 	"log"
 	"net/http"
+
+	"github.com/ihaxolotl/webproxy/internal/data"
 )
 
 type Route struct {
@@ -17,7 +18,7 @@ type Route struct {
 type JSON map[string]interface{}
 
 type Context struct {
-	Database *sql.DB
+	Database *data.Database
 }
 
 func (ctx *Context) JSON(rw *http.ResponseWriter, code int, payload interface{}) {

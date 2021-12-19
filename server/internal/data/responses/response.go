@@ -1,4 +1,4 @@
-package data
+package responses
 
 import (
 	"database/sql"
@@ -20,9 +20,17 @@ type Response struct {
 	Raw       string    `json:"raw"`       // Raw response bytes.
 }
 
-// CreateResponseTable creates the "responses" table if it doesn't already exist.
-func CreateResponseTable(db *sql.DB) (err error) {
-	_, err = db.Exec(`
+type ResponseTable struct {
+	db *sql.DB
+}
+
+func New(db *sql.DB) *ResponseTable {
+	return &ResponseTable{db}
+}
+
+// Create creates the "responses" table if it doesn't already exist.
+func (t ResponseTable) Create() (err error) {
+	_, err = t.db.Exec(`
 		CREATE TABLE IF NOT EXISTS responses (
 			id TEXT PRIMARY KEY NOT NULL UNIQUE,
 			projectid TEXT NOT NULL,
@@ -39,15 +47,15 @@ func CreateResponseTable(db *sql.DB) (err error) {
 	return err
 }
 
-// InsertResponse inserts a new entry into the response table and returns
-// the last inserted rowid and an error.
-func InsertResponse(db *sql.DB, resp *Response) (rowid int64, err error) {
+// InsertResponse inserts a new record into the response table and returns
+// the last inserted rowid or an error.
+func (t ResponseTable) Insert(resp *Response) (rowid int64, err error) {
 	var (
 		stmt *sql.Stmt
 		res  sql.Result
 	)
 
-	stmt, err = db.Prepare(`
+	stmt, err = t.db.Prepare(`
 		INSERT INTO responses(
 			id,
 			projectid,
@@ -84,18 +92,20 @@ func InsertResponse(db *sql.DB, resp *Response) (rowid int64, err error) {
 	return res.LastInsertId()
 }
 
-func InsertAndGetResponse(db *sql.DB, r *Response) (resp *Response, err error) {
+// InsertAndFetch inserts a new record into the responses table and returns the
+// full record or an error.
+func (t ResponseTable) InsertAndFetch(r *Response) (resp *Response, err error) {
 	var (
 		stmt  *sql.Stmt
 		rowid int64
 	)
 
-	rowid, err = InsertResponse(db, r)
+	rowid, err = t.Insert(r)
 	if err != nil {
 		return nil, err
 	}
 
-	stmt, err = db.Prepare(`
+	stmt, err = t.db.Prepare(`
 		SELECT 
 			id,
 			projectid,
@@ -133,12 +143,12 @@ func InsertAndGetResponse(db *sql.DB, r *Response) (resp *Response, err error) {
 	return resp, err
 }
 
-// GetResponseById queries and returns the entry from the responses table matching
+// FetchById queries and returns the record from the responses table matching
 // the supplied id parameter and optionally, an error.
-func GetResponseById(db *sql.DB, id string) (resp *Response, err error) {
+func (t ResponseTable) FetchById(id string) (resp *Response, err error) {
 	var stmt *sql.Stmt
 
-	stmt, err = db.Prepare(`
+	stmt, err = t.db.Prepare(`
 		SELECT 
 			id,
 			projectid,

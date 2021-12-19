@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/ihaxolotl/webproxy/internal/data"
+	"github.com/ihaxolotl/webproxy/internal/data/projects"
 )
 
 // GetProjectsByIdRoute is an endpoint for fetching a project by its id.
@@ -12,7 +12,7 @@ func GetProjectsByIdRoute(ctx Context) http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
 		var (
 			projectId string
-			project   *data.Project
+			proj      *projects.Project
 			vars      map[string]string
 			err       error
 		)
@@ -20,12 +20,12 @@ func GetProjectsByIdRoute(ctx Context) http.HandlerFunc {
 		vars = mux.Vars(r)
 		projectId = vars["projectId"]
 
-		project, err = data.GetProjectById(ctx.Database, projectId)
+		proj, err = ctx.Database.Projects.FetchById(projectId)
 		if err != nil {
 			ctx.JSON(&rw, http.StatusNotFound, JSON{"err": err.Error()})
 			return
 		}
 
-		ctx.JSON(&rw, http.StatusOK, JSON{"project": project})
+		ctx.JSON(&rw, http.StatusOK, JSON{"project": proj})
 	}
 }
