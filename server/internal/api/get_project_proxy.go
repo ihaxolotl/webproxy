@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 	"github.com/ihaxolotl/webproxy/internal/proxy"
 )
@@ -45,24 +46,21 @@ var upgrader = websocket.Upgrader{}
 func GetProjectProxyRoute(ctx Context) http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
 		var (
-			conn *websocket.Conn
-			// project   *data.Project
-			// projectId string
-			// vars      map[string]string
-			cmd  chan proxy.ProxyCmd
-			prox *proxy.Proxy
-			err  error
+			conn      *websocket.Conn
+			projectId string
+			vars      map[string]string
+			cmd       chan proxy.ProxyCmd
+			prox      *proxy.Proxy
+			err       error
 		)
 
-		/*
-			vars = mux.Vars(r)
-			projectId = vars["projectId"]
+		vars = mux.Vars(r)
+		projectId = vars["projectId"]
 
-			if _, err = data.GetProjectById(ctx.Database, projectId); err != nil {
-				ctx.JSON(&rw, http.StatusNotFound, JSON{"err": err.Error()})
-				return
-			}
-		*/
+		if _, err = ctx.Database.Projects.FetchById(projectId); err != nil {
+			ctx.JSON(&rw, http.StatusNotFound, JSON{"err": err.Error()})
+			return
+		}
 
 		if conn, err = upgrader.Upgrade(rw, r, nil); err != nil {
 			ctx.JSON(&rw, http.StatusInternalServerError, JSON{"err": err.Error()})
@@ -71,9 +69,9 @@ func GetProjectProxyRoute(ctx Context) http.HandlerFunc {
 		defer conn.Close()
 
 		cmd = make(chan proxy.ProxyCmd)
-		prox = proxy.New(ctx.Database, conn, cmd)
 
 		// Spawn a new intercept proxy
+		prox = proxy.New(projectId, ctx.Database, conn, cmd)
 		go prox.Spawn()
 
 		if err = HandleProxy(ctx, conn, cmd); err != nil {

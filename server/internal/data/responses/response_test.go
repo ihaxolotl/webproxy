@@ -11,11 +11,12 @@ import (
 	_ "modernc.org/sqlite"
 )
 
-const DatabasePath = "./db.sqlite"
+const DatabasePath = "/tmp/db.sqlite"
 
 var testExampleResponse = &Response{
 	ID:        uuid.New().String(),
 	ProjectID: uuid.New().String(),
+	RequestID: uuid.New().String(),
 	Status:    200,
 	Length:    18,
 	Elapsed:   100,

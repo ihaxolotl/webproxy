@@ -10,7 +10,7 @@ import (
 	_ "modernc.org/sqlite"
 )
 
-const DatabasePath = "./db.sqlite"
+const DatabasePath = "/tmp/db.sqlite"
 
 type Table interface {
 	Create() error
