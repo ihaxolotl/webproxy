@@ -17,7 +17,6 @@
 
 <style>
     #branding {
-        color: #16161D;
         font-size: 24px;
         font-weight: 700;
         text-align: center;

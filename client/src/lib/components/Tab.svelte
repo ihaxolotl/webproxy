@@ -10,7 +10,6 @@
 
 <style>
     .tab {
-        color: #16161D;
         font-size: 16px;
         padding: 8px 2px 16px 2px;
         text-align: center;

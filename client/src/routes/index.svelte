@@ -1,5 +1,5 @@
 <script lang="ts">
-    import TabGroup from "$lib/TabGroup.svelte";
+    import TabGroup from "$lib/components/TabGroup.svelte";
     import Intercept from "$lib/containers/intercept.svelte";
     import History from "$lib/containers/history.svelte";
     import Options from "$lib/containers/options.svelte";

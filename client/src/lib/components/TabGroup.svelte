@@ -1,7 +1,7 @@
 <script lang="ts">
     import Tab from "./Tab.svelte";
 
-    export let onSelect = () => {};
+    export let onSelect = (_:string) => {};
     export let tabs = [];
 </script>
 
