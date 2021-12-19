@@ -1,7 +1,7 @@
 <script lang="ts">
     import H1 from "$lib/H1.svelte";
 
-    const pageTitle: string = "Intercept";
+    const pageTitle: string = "History";
 </script>
 
 <svelte:head>
