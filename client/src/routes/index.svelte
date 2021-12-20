@@ -10,7 +10,7 @@
         {title: "Options", active: false, view: Options},
     ];
 
-    function setTabActive(title: string): void {
+    function setTabActive(title: string) {
         tabs = tabs.map((t) => {
             if (t.title === title) {
                 return { ...t, active: true};
