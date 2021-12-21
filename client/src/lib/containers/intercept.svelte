@@ -5,16 +5,16 @@
     import { Editor } from "$lib/components/Editor";
     import { highlight, languages } from "prismjs/components/prism-core";
     import "prismjs/components/prism-http";
-    import "prismjs/themes/prism.css";
 
     const pageTitle: string = "Intercept";
     let data: string = "GET / HTTP/1.1\r\nHost: localhost:9999\r\nUser-Agent: curl/7.80.0\r\nAccept: */*\r\nConnection: Keep-Alive\r\n\r\n";
 
-    const hightlightWithLineNumbers = (input, language) =>
-  highlight(input, language)
-    .split("\n")
-    .map((line, i) => `<span class='editorLineNumber'>${i + 1}</span>${line}`)
-    .join("\n");
+    function hightlightWithLineNumbers(input: string, language: any) {
+        return highlight(input, language)
+            .split("\n")
+            .map((line: string, i: number) => `<span class='editorLineNumber'>${i + 1}</span>${line}`)
+            .join("\n");
+    }
 
     function onValueChange(v: string): void {}
 </script>

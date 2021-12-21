@@ -3,6 +3,7 @@
     import { getLines } from "./util";
     import type { Record, History } from "./types";
     import { KeyCode } from "./types";
+    import "./theme.css";
 
     function DeadFunction(_: any) {}
 
@@ -347,9 +348,10 @@
 
 <style>
     .container, textarea, pre {
-        height: 100%;
+        min-height: 600px;
         width: 100%;
         font-family: 'Roboto Mono', monospace;
+        font-size: 14px;
     }
 
     .container {
@@ -406,7 +408,6 @@
         word-break: keep-all;
         overflow-wrap: break-word;
         counter-reset: line;
-        border: 1px solid #ced4da;
     }
 
     .editor-overrides, textarea {
@@ -430,10 +431,12 @@
     :global(.editorLineNumber) {
         position: absolute;
         left: 0px;
-        color: #cccccc;
+        color: #8A8A8D;
         text-align: right;
-        width: 40px;
-        font-weight: 100;
+        width: 48px;
+        font-weight: 400;
+        padding: 0 8px 0 0;
+        border-right: 1px solid #DCDCDD;
     }
 
     /**
